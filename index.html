@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0c1424">
+  <title>SUTO CARDIA | ホーム</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, -apple-system, 'Noto Sans JP', sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: radial-gradient(circle at 70% 15%, #223c64 0%, #0c1424 52%, #070b13 100%); color: #f5f7ff; padding: 22px; }
+    main { width: min(100%, 490px); border: 1px solid #53647d; border-radius: 22px; padding: clamp(24px, 6vw, 40px); background: #101c30ed; box-shadow: 0 18px 60px #0007; }
+    .eyebrow { color: #9cb9e8; font-size: .78rem; letter-spacing: .2em; font-weight: 700; }
+    h1 { margin: 12px 0 0; font-size: clamp(2.1rem, 9vw, 3.5rem); letter-spacing: .04em; line-height: 1.1; }
+    .sub { margin: 8px 0 28px; color: #bac9df; }
+    .menu { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
+    .menu button { margin:0; padding:16px 8px; }
+    .menu button:disabled { cursor:not-allowed; opacity:.45; }
+    .note { color:#aabbd3; font-size:.85rem; margin:15px 0 0; line-height:1.6; }
+    .status { padding: 16px; border-radius: 12px; background: #1b2b43; border: 1px solid #435876; min-height: 72px; line-height: 1.65; overflow-wrap: anywhere; }
+    .status.ok { border-color: #51c9a7; }
+    .status.err { border-color: #f3a1a1; }
+    button { display: block; width: 100%; margin-top: 18px; border: 0; border-radius: 12px; padding: 15px; background: #a8c7ff; color: #0a1b32; font-size: 1rem; font-weight: 800; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    small { display: block; margin-top: 18px; color: #b0bdd0; line-height: 1.7; }
+    code { color: #d6e6ff; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">ONLINE CARD BATTLE</div>
+    <h1>SUTO CARDIA</h1>
+    <p class="sub">すとカーディア ｜ ゲームホーム（準備版）</p>
+    <div id="status" class="status" role="status" aria-live="polite">Firebase SDKを読み込んでいます…</div>
+    <button id="test" disabled>匿名ログインをテスト</button>
+    <div class="menu" aria-label="ゲームメニュー">
+      <button type="button" disabled>CPU対戦（準備中）</button>
+      <button type="button" disabled>オンライン対戦（準備中）</button>
+      <button type="button" disabled>デッキ編集（準備中）</button>
+      <button type="button" disabled>カード図鑑（準備中）</button>
+    </div>
+    <p class="note">今回はホーム画面の土台を追加。ゲームメニューは機能を実装した順に有効化します。</p>
+    <small>Firebase匿名認証の動作確認は引き続き可能です。Firestoreへの読み書きは行いません。</small>
+  </main>
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyDLBYkHP8_azxRxCxY3iuQNkaJSvqcsnto',
+      authDomain: 'suto-cardia.firebaseapp.com',
+      projectId: 'suto-cardia',
+      storageBucket: 'suto-cardia.firebasestorage.app',
+      messagingSenderId: '54698306541',
+      appId: '1:54698306541:web:16ffdbbfa5df5f4f16d5e4',
+      measurementId: 'G-4FXWY2LL0W'
+    };
+    const status = document.getElementById('status');
+    const button = document.getElementById('test');
+    const show = (message, type = '') => { status.textContent = message; status.className = `status ${type}`; };
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      show('Firebaseの初期化に成功しました。下のボタンで匿名ログインを確認できます。', 'ok');
+      button.disabled = false;
+      onAuthStateChanged(auth, user => {
+        if (user) show('匿名ログイン成功！ Firebase UID: ' + user.uid, 'ok');
+      }, error => show('認証状態の確認に失敗: ' + error.code, 'err'));
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        show('匿名ログインを試しています…');
+        try {
+          const result = await signInAnonymously(auth);
+          show('匿名ログイン成功！ Firebase UID: ' + result.user.uid, 'ok');
+        } catch (error) {
+          show('ログイン失敗: ' + (error.code || error.message) + '。Authenticationの匿名認証設定を確認してください。', 'err');
+        } finally {
+          button.disabled = false;
+        }
+      });
+    } catch (error) {
+      show('Firebase初期化エラー: ' + (error.message || String(error)), 'err');
+    }
+  </script>
+</body>
+</html>
